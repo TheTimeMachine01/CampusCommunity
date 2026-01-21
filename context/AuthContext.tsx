@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import { router, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { authApi } from '../services/api';
+import { mockUsers } from '../services/mockData';
 import { User, LoginCredentials, SignupCredentials, UserRole } from '../constants/types';
 
 interface AuthContextType {
@@ -28,10 +29,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
       const userRole = await SecureStore.getItemAsync('userRole');
       const userId = await SecureStore.getItemAsync('userId');
       const clubId = await SecureStore.getItemAsync('clubId');
-      return { accessToken, refreshToken, userRole, userId, clubId };
+      const email = await SecureStore.getItemAsync('userEmail');
+      return { accessToken, refreshToken, userRole, userId, clubId, email };
     } catch (e) {
       console.error("AuthContext: Failed to retrieve tokens from SecureStore:", e);
-      return { accessToken: null, refreshToken: null, userRole: null, userId: null, clubId: null };
+      return { accessToken: null, refreshToken: null, userRole: null, userId: null, clubId: null, email: null };
     }
   };
 
@@ -40,7 +42,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
     refreshToken: string,
     userRole: UserRole = 'student',
     userId: string = 'user_123',
-    clubId?: string
+    clubId?: string,
+    email?: string
   ) => {
     try {
       await SecureStore.setItemAsync('accessToken', accessToken);
@@ -49,6 +52,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
       await SecureStore.setItemAsync('userId', userId);
       if (clubId) {
         await SecureStore.setItemAsync('clubId', clubId);
+      }
+      if (email) {
+        await SecureStore.setItemAsync('userEmail', email);
       }
     } catch (e) {
       console.error("AuthContext: Failed to store tokens in SecureStore:", e);
@@ -93,14 +99,15 @@ function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadAuthStatus = async () => {
       try {
-        const { accessToken, userRole, userId, clubId } = await getTokens();
-        if (accessToken && userRole && userId) {
-          // In a real app, you'd validate the token with the backend
+        const { accessToken, userRole, userId, clubId, email } = await getTokens();
+        if (accessToken && userRole && userId && email) {
+          // Get user data from mockUsers to get the actual name and avatar
+          const mockUser = mockUsers[email];
           setUser({ 
             id: userId, 
-            email: 'user@example.com',
-            name: 'John Doe',
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+            email: email,
+            name: mockUser?.name || 'User',
+            avatar: mockUser?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
             role: userRole as UserRole,
             clubId: clubId || undefined,
           });
@@ -153,12 +160,15 @@ function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Login response missing tokens from backend.");
       }
 
-      await setTokens(accessToken, refreshToken, role, userId, clubId);
+      // Get user data from mockUsers
+      const mockUser = mockUsers[credentials.email];
+      
+      await setTokens(accessToken, refreshToken, role as UserRole, userId, clubId, credentials.email);
       setUser({ 
         id: userId, 
         email: credentials.email,
-        name: 'John Doe',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+        name: mockUser?.name || 'User',
+        avatar: mockUser?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
         role: role as UserRole,
         clubId: clubId,
       });

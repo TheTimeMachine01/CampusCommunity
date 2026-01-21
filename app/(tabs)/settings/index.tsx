@@ -83,25 +83,52 @@ export default function SettingsScreen() {
             backgroundColor={cardBg} 
             borderRadius={12} 
             padding={20} 
-            alignItems="center"
+            alignItems="flex-start"
             shadowColor="#000"
             shadowOffset={{ width: 0, height: 2 }}
             shadowOpacity={0.1}
             shadowRadius={4}
             elevation={2}
+            gap={15}
+            justifyContent="space-between"
           >
-            <Image
-              source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
-              style={{ width: 60, height: 60, borderRadius: 30, marginRight: 15 }}
-            />
-            <YStack flex={1} gap={4}>
-              <Text fontSize={18} fontWeight="600" color={isDark ? '#ffffff' : '#1f2937'}>
-                {user?.name || 'User'}
-              </Text>
-              <Text fontSize={14} color={isDark ? '#d1d5db' : '#6b7280'}>
+            <YStack flex={1} gap={8}>
+              <XStack gap={10} alignItems="center">
+                <Text fontSize={24} fontWeight="600" color={isDark ? '#ffffff' : '#1f2937'}>
+                  {user?.name || 'User'}
+                </Text>
+                <YStack
+                  backgroundColor={isDark ? '#333333' : '#f3f4f6'}
+                  paddingVertical={4}
+                  paddingHorizontal={10}
+                  borderRadius={6}
+                >
+                  <Text fontSize={11} fontWeight="600" color={isDark ? '#a0aec0' : '#4b5563'} textTransform="capitalize">
+                    {user?.role || 'guest'}
+                  </Text>
+                </YStack>
+              </XStack>
+              <Text fontSize={13} color={isDark ? '#d1d5db' : '#6b7280'}>
                 {user?.email}
               </Text>
+              {user?.clubId && (
+                <YStack
+                  backgroundColor={isDark ? '#1a3a2a' : '#ecfdf5'}
+                  paddingVertical={4}
+                  paddingHorizontal={10}
+                  borderRadius={6}
+                  alignSelf="flex-start"
+                >
+                  <Text fontSize={11} fontWeight="600" color={isDark ? '#86efac' : '#047857'}>
+                    Club: {user.clubId}
+                  </Text>
+                </YStack>
+              )}
             </YStack>
+            <Image
+              source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
+              style={{ width: 60, height: 60, borderRadius: 30 }}
+            />
           </XStack>
         </YStack>
 

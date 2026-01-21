@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { View, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
 import { YStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ClubCard } from '../../../components/ui/ClubCard';
 import { RoleGuard } from '../../../components/RoleGuard';
+import { ClubUpdateModal } from '../../../components/modals/ClubUpdateModal';
 import { clubsApi } from '../../../services/api';
-import { Club } from '../../../constants/types';
+import { Club, Update } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -13,6 +14,8 @@ export default function ClubsScreen() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [selectedClubId, setSelectedClubId] = useState<string>('');
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
   const { user } = useAuth();
@@ -34,6 +37,28 @@ export default function ClubsScreen() {
     setRefreshing(true);
     await loadClubs();
     setRefreshing(false);
+  };
+
+  const canPostUpdate = (clubId: string) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (user.role === 'club_lead' && user.clubId === clubId) return true;
+    return false;
+  };
+
+  const handlePostUpdate = (clubId: string) => {
+    if (canPostUpdate(clubId)) {
+      setSelectedClubId(clubId);
+      setUpdateModalVisible(true);
+    } else {
+      Alert.alert('Permission Denied', 'You do not have permission to post updates for this club.');
+    }
+  };
+
+  const handleUpdateSuccess = async (update: Update) => {
+    // Reload clubs from API to get fresh data without duplicates
+    await loadClubs();
+    Alert.alert('Success', 'Your update has been posted to the club feed.');
   };
 
   useEffect(() => {
@@ -85,11 +110,15 @@ export default function ClubsScreen() {
                   marginBottom: 10,
                 }}
                 onPress={() => {
-                  console.log('Edit club button pressed - admin/club_lead only');
+                  if (clubs.length > 0 && canPostUpdate(clubs[0].id)) {
+                    handlePostUpdate(clubs[0].id);
+                  } else {
+                    Alert.alert('No Clubs', 'Subscribe to a club first or check your permissions.');
+                  }
                 }}
               >
                 <Text color="white" fontWeight="bold" textAlign="center">
-                  + Manage Club
+                  + Post Update
                 </Text>
               </Pressable>
             </RoleGuard>
@@ -121,6 +150,14 @@ export default function ClubsScreen() {
           )}
         </YStack>
       </ScrollView>
+
+      <ClubUpdateModal
+        visible={updateModalVisible}
+        clubId={selectedClubId}
+        onClose={() => setUpdateModalVisible(false)}
+        onSuccess={handleUpdateSuccess}
+        authorName={user?.name || 'Club Member'}
+      />
     </YStack>
   );
 }

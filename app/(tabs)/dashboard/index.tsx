@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { View, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
 import { YStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NewsCard } from '../../../components/ui/NewsCard';
 import { RoleGuard } from '../../../components/RoleGuard';
+import { NewsModal } from '../../../components/modals/NewsModal';
 import { newsApi } from '../../../services/api';
 import { NewsItem } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
@@ -13,6 +14,7 @@ export default function DashboardScreen() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [newsModalVisible, setNewsModalVisible] = useState(false);
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
   const { user } = useAuth();
@@ -34,6 +36,12 @@ export default function DashboardScreen() {
     setRefreshing(true);
     await loadNews();
     setRefreshing(false);
+  };
+
+  const handleNewsSuccess = async (newNews: NewsItem) => {
+    // Reload news from API to get fresh data without duplicates
+    await loadNews();
+    Alert.alert('Success', 'Your announcement has been published to the campus feed.');
   };
 
   useEffect(() => {
@@ -84,9 +92,7 @@ export default function DashboardScreen() {
                   borderRadius: 8,
                   marginBottom: 10,
                 }}
-                onPress={() => {
-                  console.log('Create news button pressed - admin only');
-                }}
+                onPress={() => setNewsModalVisible(true)}
               >
                 <Text color="white" fontWeight="bold" textAlign="center">
                   + Create News Post
@@ -121,6 +127,13 @@ export default function DashboardScreen() {
           )}
         </YStack>
       </ScrollView>
+
+      <NewsModal
+        visible={newsModalVisible}
+        onClose={() => setNewsModalVisible(false)}
+        onSuccess={handleNewsSuccess}
+        authorName={user?.name || 'Campus Admin'}
+      />
     </YStack>
   );
 }

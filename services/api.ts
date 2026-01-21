@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { API_ROUTES } from '../constants/apiRoutes';
-import { mockNews, mockClubs, mockUsers, mockDelay } from './mockData';
-import { LoginCredentials, SignupCredentials, AuthTokens, NewsItem, Club } from '../constants/types';
+import { mockNews as initialMockNews, mockClubs as initialMockClubs, mockUsers, mockDelay } from './mockData';
+import { LoginCredentials, SignupCredentials, AuthTokens, NewsItem, Club, Update } from '../constants/types';
+
+// Mutable state for mock data to allow simulated persistence
+let mockNewsState: NewsItem[] = JSON.parse(JSON.stringify(initialMockNews));
+let mockClubsState: Club[] = JSON.parse(JSON.stringify(initialMockClubs));
 
 // Create axios instance
 const api = axios.create({
@@ -54,12 +58,12 @@ const mockApiResponses = {
 
   [API_ROUTES.NEWS]: async (): Promise<{ data: NewsItem[] }> => {
     await mockDelay(800);
-    return { data: mockNews };
+    return { data: mockNewsState };
   },
 
   [API_ROUTES.CLUBS]: async (): Promise<{ data: Club[] }> => {
     await mockDelay(600);
-    return { data: mockClubs.filter(club => club.isSubscribed) };
+    return { data: mockClubsState.filter(club => club.isSubscribed) };
   },
 };
 
@@ -123,6 +127,25 @@ export const newsApi = {
   getNews: async () => {
     return mockApiResponses[API_ROUTES.NEWS]();
   },
+
+  createNews: async (newsData: Partial<NewsItem>) => {
+    await mockDelay(1200);
+    
+    const newNews: NewsItem = {
+      id: 'news_' + Date.now(),
+      title: newsData.title || '',
+      description: newsData.description || '',
+      imageUrl: newsData.imageUrl || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
+      timestamp: new Date(),
+      category: (newsData.category as 'event' | 'announcement' | 'achievement') || 'announcement',
+      author: newsData.author || 'Campus Admin',
+      readCount: 0,
+    };
+    
+    // Add to the beginning of the news array
+    mockNewsState.unshift(newNews);
+    return { data: newNews };
+  },
 };
 
 export const clubsApi = {
@@ -132,8 +155,28 @@ export const clubsApi = {
   
   getClubUpdates: async (clubId: string) => {
     await mockDelay(500);
-    const club = mockClubs.find(c => c.id === clubId);
+    const club = mockClubsState.find(c => c.id === clubId);
     return { data: club?.updates || [] };
+  },
+
+  addClubUpdate: async (clubId: string, updateData: Partial<Update>) => {
+    await mockDelay(1000);
+    const club = mockClubsState.find(c => c.id === clubId);
+    if (!club) {
+      throw new Error('Club not found');
+    }
+    
+    const newUpdate: Update = {
+      id: 'update_' + Date.now(),
+      title: updateData.title || '',
+      content: updateData.content || '',
+      timestamp: new Date(),
+      type: updateData.type || 'announcement',
+    };
+    
+    // Add to the beginning of the updates array
+    club.updates.unshift(newUpdate);
+    return { data: newUpdate };
   },
 };
 

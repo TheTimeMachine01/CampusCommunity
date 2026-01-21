@@ -111,6 +111,45 @@ export default function ProfileSettings() {
             </TouchableOpacity>
           </YStack>
 
+          {/* Role & Club Information */}
+          <YStack backgroundColor={cardBg} borderRadius={12} padding={16} gap={12}>
+            <XStack justifyContent="space-between" alignItems="center">
+              <Text fontSize={14} fontWeight="600" color={textColor}>
+                Account Type
+              </Text>
+              <Text 
+                fontSize={13} 
+                fontWeight="600" 
+                color="#6366F1" 
+                textTransform="capitalize"
+                paddingVertical={6}
+                paddingHorizontal={12}
+                backgroundColor={isDark ? '#1a1a3e' : '#eef2ff'}
+                borderRadius={6}
+              >
+                {user?.role || 'guest'}
+              </Text>
+            </XStack>
+            {user?.clubId && (
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize={14} fontWeight="600" color={textColor}>
+                  Assigned Club
+                </Text>
+                <Text 
+                  fontSize={13} 
+                  fontWeight="600" 
+                  color="#10B981"
+                  paddingVertical={6}
+                  paddingHorizontal={12}
+                  backgroundColor={isDark ? '#1a3a2a' : '#ecfdf5'}
+                  borderRadius={6}
+                >
+                  Club #{user.clubId}
+                </Text>
+              </XStack>
+            )}
+          </YStack>
+
           {/* Form Section */}
           <YStack backgroundColor={cardBg} borderRadius={12} padding={20} gap={20}>
             <YStack gap={8}>
@@ -154,7 +193,11 @@ export default function ProfileSettings() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                editable={false}
               />
+              <Text fontSize={12} color={isDark ? '#888888' : '#9ca3af'} marginTop={4}>
+                Email cannot be changed
+              </Text>
             </YStack>
 
             <Button
