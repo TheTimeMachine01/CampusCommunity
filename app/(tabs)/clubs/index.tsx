@@ -6,6 +6,8 @@ import { ClubCard } from '../../../components/ui/ClubCard';
 import { RoleGuard } from '../../../components/RoleGuard';
 import { ClubUpdateModal } from '../../../components/modals/ClubUpdateModal';
 import { clubsApi } from '../../../services/api';
+import { useConnectivity } from '../../../context/ConnectivityContext';
+import { clubsCache } from '../../../services/storage';
 import { Club, Update } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -19,15 +21,26 @@ export default function ClubsScreen() {
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
   const { user } = useAuth();
+  const { isOnline } = useConnectivity();
 
   const isDark = colorScheme === 'dark';
 
   const loadClubs = async () => {
     try {
-      const response = await clubsApi.getClubs();
-      setClubs(response.data);
+      // Try to load from API if online
+      if (isOnline) {
+        const response = await clubsApi.getClubs();
+        setClubs(response.data);
+      } else {
+        // Load from cache when offline
+        const cachedClubs = await clubsCache.get();
+        setClubs(cachedClubs || []);
+      }
     } catch (error) {
       console.error('Failed to load clubs:', error);
+      // Fallback to cache on API error
+      const cachedClubs = await clubsCache.get();
+      setClubs(cachedClubs || []);
     } finally {
       setLoading(false);
     }
@@ -63,7 +76,7 @@ export default function ClubsScreen() {
 
   useEffect(() => {
     loadClubs();
-  }, []);
+  }, [isOnline]);
 
   return (
     <YStack flex={1} backgroundColor={theme.background}>

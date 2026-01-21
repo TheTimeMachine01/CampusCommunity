@@ -2,6 +2,7 @@ import axios from 'axios';
 import { API_ROUTES } from '../constants/apiRoutes';
 import { mockNews as initialMockNews, mockClubs as initialMockClubs, mockUsers, mockDelay } from './mockData';
 import { LoginCredentials, SignupCredentials, AuthTokens, NewsItem, Club, Update } from '../constants/types';
+import { newsCache, clubsCache, syncMetadata } from './storage';
 
 // Mutable state for mock data to allow simulated persistence
 let mockNewsState: NewsItem[] = JSON.parse(JSON.stringify(initialMockNews));
@@ -58,12 +59,20 @@ const mockApiResponses = {
 
   [API_ROUTES.NEWS]: async (): Promise<{ data: NewsItem[] }> => {
     await mockDelay(800);
-    return { data: mockNewsState };
+    const data = mockNewsState;
+    // Cache the response
+    await newsCache.save(data);
+    await syncMetadata.setLastSync();
+    return { data };
   },
 
   [API_ROUTES.CLUBS]: async (): Promise<{ data: Club[] }> => {
     await mockDelay(600);
-    return { data: mockClubsState.filter(club => club.isSubscribed) };
+    const data = mockClubsState.filter(club => club.isSubscribed);
+    // Cache the response
+    await clubsCache.save(data);
+    await syncMetadata.setLastSync();
+    return { data };
   },
 };
 

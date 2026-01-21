@@ -6,6 +6,8 @@ import { NewsCard } from '../../../components/ui/NewsCard';
 import { RoleGuard } from '../../../components/RoleGuard';
 import { NewsModal } from '../../../components/modals/NewsModal';
 import { newsApi } from '../../../services/api';
+import { useConnectivity } from '../../../context/ConnectivityContext';
+import { newsCache } from '../../../services/storage';
 import { NewsItem } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -18,15 +20,26 @@ export default function DashboardScreen() {
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
   const { user } = useAuth();
+  const { isOnline } = useConnectivity();
 
   const isDark = colorScheme === 'dark';
 
   const loadNews = async () => {
     try {
-      const response = await newsApi.getNews();
-      setNews(response.data);
+      // Try to load from API if online
+      if (isOnline) {
+        const response = await newsApi.getNews();
+        setNews(response.data);
+      } else {
+        // Load from cache when offline
+        const cachedNews = await newsCache.get();
+        setNews(cachedNews || []);
+      }
     } catch (error) {
       console.error('Failed to load news:', error);
+      // Fallback to cache on API error
+      const cachedNews = await newsCache.get();
+      setNews(cachedNews || []);
     } finally {
       setLoading(false);
     }
@@ -46,7 +59,7 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     loadNews();
-  }, []);
+  }, [isOnline]);
 
   return (
     <YStack flex={1} backgroundColor={theme.background}>

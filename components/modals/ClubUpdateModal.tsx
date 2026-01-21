@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, View, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { YStack, XStack, TextArea, Text, Button, useTheme } from 'tamagui';
 import { clubsApi } from '../../services/api';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { Update } from '../../constants/types';
 
 interface ClubUpdateModalProps {
@@ -20,11 +21,17 @@ export function ClubUpdateModal({
   authorName,
 }: ClubUpdateModalProps) {
   const theme = useTheme();
+  const { isOnline } = useConnectivity();
   const [content, setContent] = useState('');
   const [type, setType] = useState<'event' | 'announcement' | 'achievement'>('announcement');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    if (!isOnline) {
+      alert('You must be online to post updates');
+      return;
+    }
+
     if (!content.trim()) {
       alert('Please enter update content');
       return;
@@ -175,16 +182,16 @@ export function ClubUpdateModal({
                 </Button>
                 <Button
                   flex={1}
-                  backgroundColor="#10B981"
+                  backgroundColor={isOnline ? '#10B981' : '#ccc'}
                   onPress={handleSubmit}
-                  disabled={loading}
-                  opacity={loading ? 0.6 : 1}
+                  disabled={loading || !isOnline}
+                  opacity={loading || !isOnline ? 0.6 : 1}
                 >
                   {loading ? (
                     <ActivityIndicator color="white" />
                   ) : (
                     <Text color="white" fontWeight="bold">
-                      Post
+                      {isOnline ? 'Post' : 'Offline'}
                     </Text>
                   )}
                 </Button>

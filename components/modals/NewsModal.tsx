@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, View, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { YStack, XStack, Input, TextArea, Text, Button, useTheme } from 'tamagui';
 import { newsApi } from '../../services/api';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { NewsItem } from '../../constants/types';
 
 interface NewsModalProps {
@@ -13,6 +14,7 @@ interface NewsModalProps {
 
 export function NewsModal({ visible, onClose, onSuccess, authorName }: NewsModalProps) {
   const theme = useTheme();
+  const { isOnline } = useConnectivity();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400');
@@ -20,6 +22,11 @@ export function NewsModal({ visible, onClose, onSuccess, authorName }: NewsModal
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    if (!isOnline) {
+      alert('You must be online to create news');
+      return;
+    }
+
     if (!title.trim() || !description.trim()) {
       alert('Please fill in all required fields');
       return;
@@ -178,16 +185,16 @@ export function NewsModal({ visible, onClose, onSuccess, authorName }: NewsModal
                 </Button>
                 <Button
                   flex={1}
-                  backgroundColor="#667eea"
+                  backgroundColor={isOnline ? '#667eea' : '#ccc'}
                   onPress={handleSubmit}
-                  disabled={loading}
-                  opacity={loading ? 0.6 : 1}
+                  disabled={loading || !isOnline}
+                  opacity={loading || !isOnline ? 0.6 : 1}
                 >
                   {loading ? (
                     <ActivityIndicator color="white" />
                   ) : (
                     <Text color="white" fontWeight="bold">
-                      Publish
+                      {isOnline ? 'Publish' : 'Offline'}
                     </Text>
                   )}
                 </Button>
