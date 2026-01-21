@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { YStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NewsCard } from '../../../components/ui/NewsCard';
+import { RoleGuard } from '../../../components/RoleGuard';
 import { newsApi } from '../../../services/api';
 import { NewsItem } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function DashboardScreen() {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -13,6 +15,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
+  const { user } = useAuth();
 
   const isDark = colorScheme === 'dark';
 
@@ -68,9 +71,29 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <YStack padding={20} gap={15}>
-          <Text fontSize={20} fontWeight="bold" color={isDark ? '#ffffff' : '#1f2937'}>
-            Latest News
-          </Text>
+          <YStack gap={10}>
+            <Text fontSize={20} fontWeight="bold" color={isDark ? '#ffffff' : '#1f2937'}>
+              Latest News
+            </Text>
+            <RoleGuard allowedRoles={['admin']}>
+              <Pressable
+                style={{
+                  backgroundColor: '#667eea',
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  marginBottom: 10,
+                }}
+                onPress={() => {
+                  console.log('Create news button pressed - admin only');
+                }}
+              >
+                <Text color="white" fontWeight="bold" textAlign="center">
+                  + Create News Post
+                </Text>
+              </Pressable>
+            </RoleGuard>
+          </YStack>
           {loading ? (
             <Text fontSize={16} color={isDark ? '#d1d5db' : '#6b7280'} textAlign="center" padding={20}>
               Loading news...

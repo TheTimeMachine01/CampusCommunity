@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_ROUTES } from '../constants/apiRoutes';
-import { mockNews, mockClubs, mockDelay } from './mockData';
+import { mockNews, mockClubs, mockUsers, mockDelay } from './mockData';
 import { LoginCredentials, SignupCredentials, AuthTokens, NewsItem, Club } from '../constants/types';
 
 // Create axios instance
@@ -15,13 +15,18 @@ const api = axios.create({
 // Mock API responses
 const mockApiResponses = {
   // Auth endpoints
-  [API_ROUTES.AUTH.LOGIN]: async (data: LoginCredentials): Promise<{ data: AuthTokens }> => {
+  [API_ROUTES.AUTH.LOGIN]: async (data: LoginCredentials): Promise<{ data: AuthTokens & { role: string; userId: string; clubId?: string } }> => {
     await mockDelay(1500);
-    if (data.email === 'test@example.com' && data.password === 'password') {
+    // Look up user from mockUsers
+    const user = mockUsers[data.email];
+    if (user) {
       return {
         data: {
           accessToken: 'mock_access_token_' + Date.now(),
           refreshToken: 'mock_refresh_token_' + Date.now(),
+          role: user.role,
+          userId: user.id,
+          clubId: user.clubId,
         },
       };
     }

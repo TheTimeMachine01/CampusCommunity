@@ -7,10 +7,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
+import { useAuth } from '../../hooks/useAuth';
 
-interface MyFloatingTabBarProps extends BottomTabBarProps {}
+interface MyFloatingTabBarProps extends BottomTabBarProps {
+  visibleRoutes?: string[];
+}
 
-function MyFloatingTabBar({ state, descriptors, navigation }: MyFloatingTabBarProps) {
+function MyFloatingTabBar({ state, descriptors, navigation, visibleRoutes = [] }: MyFloatingTabBarProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -34,6 +37,11 @@ function MyFloatingTabBar({ state, descriptors, navigation }: MyFloatingTabBarPr
     }
   };
 
+  // Filter routes based on visible routes
+  const filteredRoutes = state.routes.filter(route => 
+    visibleRoutes.length === 0 || visibleRoutes.includes(route.name)
+  );
+
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <BlurView
@@ -42,7 +50,7 @@ function MyFloatingTabBar({ state, descriptors, navigation }: MyFloatingTabBarPr
         style={StyleSheet.absoluteFillObject}
       />
       <View style={[styles.tabBarContainer, { backgroundColor: tabBarBackgroundColor }]}>
-        {state.routes.map((route: any, index: number) => {
+        {filteredRoutes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
           const label =
             typeof options.tabBarLabel === 'string'
@@ -105,31 +113,64 @@ function MyFloatingTabBar({ state, descriptors, navigation }: MyFloatingTabBarPr
 }
 
 export default function TabLayout() {
+  const { user } = useAuth();
+
+  // Define which routes are visible for each role
+  const getVisibleRoutes = () => {
+    if (!user) return [];
+
+    const baseRoutes = ['dashboard', 'settings'];
+    
+    switch (user.role) {
+      case 'admin':
+        // Admin can see all routes
+        return ['dashboard', 'clubs', 'settings'];
+      case 'club_lead':
+        // Club leads can see clubs and settings
+        return ['clubs', 'settings'];
+      case 'student':
+        // Students can see dashboard, clubs, and settings
+        return ['dashboard', 'clubs', 'settings'];
+      case 'guest':
+      default:
+        // Guests shouldn't reach tabs, but if they do, show minimal access
+        return ['dashboard'];
+    }
+  };
+
+  const visibleRoutes = getVisibleRoutes();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
       }}
-      tabBar={(props) => <MyFloatingTabBar {...props} />}
+      tabBar={(props) => <MyFloatingTabBar {...props} visibleRoutes={visibleRoutes} />}
     >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: 'Dashboard',
-        }}
-      />
-      <Tabs.Screen
-        name="clubs"
-        options={{
-          title: 'Clubs',
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-        }}
-      />
+      {visibleRoutes.includes('dashboard') && (
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            title: 'Dashboard',
+          }}
+        />
+      )}
+      {visibleRoutes.includes('clubs') && (
+        <Tabs.Screen
+          name="clubs"
+          options={{
+            title: 'Clubs',
+          }}
+        />
+      )}
+      {visibleRoutes.includes('settings') && (
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+          }}
+        />
+      )}
     </Tabs>
   );
 }

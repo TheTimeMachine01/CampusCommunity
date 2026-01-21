@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { YStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ClubCard } from '../../../components/ui/ClubCard';
+import { RoleGuard } from '../../../components/RoleGuard';
 import { clubsApi } from '../../../services/api';
 import { Club } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function ClubsScreen() {
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -13,6 +15,7 @@ export default function ClubsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
+  const { user } = useAuth();
 
   const isDark = colorScheme === 'dark';
 
@@ -68,9 +71,29 @@ export default function ClubsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <YStack padding={20} gap={15}>
-          <Text fontSize={20} fontWeight="bold" color={isDark ? '#ffffff' : '#1f2937'} marginBottom={10}>
-            Active Communities
-          </Text>
+          <YStack gap={10}>
+            <Text fontSize={20} fontWeight="bold" color={isDark ? '#ffffff' : '#1f2937'} marginBottom={10}>
+              Active Communities
+            </Text>
+            <RoleGuard allowedRoles={['admin', 'club_lead']}>
+              <Pressable
+                style={{
+                  backgroundColor: '#10B981',
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 8,
+                  marginBottom: 10,
+                }}
+                onPress={() => {
+                  console.log('Edit club button pressed - admin/club_lead only');
+                }}
+              >
+                <Text color="white" fontWeight="bold" textAlign="center">
+                  + Manage Club
+                </Text>
+              </Pressable>
+            </RoleGuard>
+          </YStack>
           {loading ? (
             <Text fontSize={16} color={isDark ? '#d1d5db' : '#6b7280'} textAlign="center" padding={20}>
               Loading clubs...

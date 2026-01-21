@@ -2,7 +2,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import { router, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { authApi } from '../services/api';
-import { User, LoginCredentials, SignupCredentials } from '../constants/types';
+import { User, LoginCredentials, SignupCredentials, UserRole } from '../constants/types';
 
 interface AuthContextType {
   user: User | null;
@@ -25,17 +25,31 @@ function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const accessToken = await SecureStore.getItemAsync('accessToken');
       const refreshToken = await SecureStore.getItemAsync('refreshToken');
-      return { accessToken, refreshToken };
+      const userRole = await SecureStore.getItemAsync('userRole');
+      const userId = await SecureStore.getItemAsync('userId');
+      const clubId = await SecureStore.getItemAsync('clubId');
+      return { accessToken, refreshToken, userRole, userId, clubId };
     } catch (e) {
       console.error("AuthContext: Failed to retrieve tokens from SecureStore:", e);
-      return { accessToken: null, refreshToken: null };
+      return { accessToken: null, refreshToken: null, userRole: null, userId: null, clubId: null };
     }
   };
 
-  const setTokens = async (accessToken: string, refreshToken: string) => {
+  const setTokens = async (
+    accessToken: string, 
+    refreshToken: string,
+    userRole: UserRole = 'student',
+    userId: string = 'user_123',
+    clubId?: string
+  ) => {
     try {
       await SecureStore.setItemAsync('accessToken', accessToken);
       await SecureStore.setItemAsync('refreshToken', refreshToken);
+      await SecureStore.setItemAsync('userRole', userRole);
+      await SecureStore.setItemAsync('userId', userId);
+      if (clubId) {
+        await SecureStore.setItemAsync('clubId', clubId);
+      }
     } catch (e) {
       console.error("AuthContext: Failed to store tokens in SecureStore:", e);
     }
@@ -45,6 +59,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await SecureStore.deleteItemAsync('accessToken');
       await SecureStore.deleteItemAsync('refreshToken');
+      await SecureStore.deleteItemAsync('userRole');
+      await SecureStore.deleteItemAsync('userId');
+      await SecureStore.deleteItemAsync('clubId');
     } catch (e) {
       console.error("AuthContext: Failed to remove tokens from SecureStore:", e);
     }
@@ -76,14 +93,16 @@ function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadAuthStatus = async () => {
       try {
-        const { accessToken } = await getTokens();
-        if (accessToken) {
+        const { accessToken, userRole, userId, clubId } = await getTokens();
+        if (accessToken && userRole && userId) {
           // In a real app, you'd validate the token with the backend
           setUser({ 
-            id: 'user_123', 
+            id: userId, 
             email: 'user@example.com',
             name: 'John Doe',
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100'
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+            role: userRole as UserRole,
+            clubId: clubId || undefined,
           });
         } else {
           setUser(null);
@@ -106,8 +125,14 @@ function AuthProvider({ children }: { children: ReactNode }) {
       console.log('AuthContext: redirect effect - user:', user?.email || 'null', 'inAuthGroup:', inAuthGroup, 'isLoadingAuth:', isLoadingAuth);
 
       if (user && inAuthGroup) {
-        console.log('AuthContext: redirecting to dashboard');
-        router.replace('/(tabs)/dashboard');
+        // Prevent guests from accessing tabs
+        if (user.role === 'guest') {
+          console.log('AuthContext: Guest cannot access tabs');
+          router.replace('/(auth)/login');
+        } else {
+          console.log('AuthContext: redirecting to dashboard');
+          router.replace('/(tabs)/dashboard');
+        }
       } else if (!user && !inAuthGroup) {
         console.log('AuthContext: redirecting to login');
         router.replace('/(auth)/login');
@@ -122,20 +147,22 @@ function AuthProvider({ children }: { children: ReactNode }) {
       console.log('AuthContext: login called with email:', credentials.email);
       const response = await authApi.login(credentials);
       console.log('AuthContext: login response received:', response);
-      const { accessToken, refreshToken } = response.data;
+      const { accessToken, refreshToken, role = 'student', userId = 'user_123', clubId } = response.data;
 
       if (!accessToken || !refreshToken) {
         throw new Error("Login response missing tokens from backend.");
       }
 
-      await setTokens(accessToken, refreshToken);
+      await setTokens(accessToken, refreshToken, role, userId, clubId);
       setUser({ 
-        id: 'user_123', 
+        id: userId, 
         email: credentials.email,
         name: 'John Doe',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100'
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+        role: role as UserRole,
+        clubId: clubId,
       });
-      console.log('AuthContext: login successful, user set');
+      console.log('AuthContext: login successful, user set with role:', role);
       return true;
     } catch (error: any) {
       console.error("AuthContext: Login failed:", error.message);

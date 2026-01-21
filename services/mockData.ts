@@ -1,4 +1,4 @@
-import { NewsItem, Club, Update } from '../constants/types';
+import { NewsItem, Club, Update, User } from '../constants/types';
 
 export const mockNews: NewsItem[] = [
   {
@@ -134,6 +134,32 @@ export const mockClubs: Club[] = [
     ],
   },
 ];
+
+// Mock Users for different roles
+export const mockUsers: { [key: string]: User } = {
+  'admin@campus.com': {
+    id: 'admin_001',
+    email: 'admin@campus.com',
+    name: 'Admin User',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+    role: 'admin',
+  },
+  'lead@campus.com': {
+    id: 'lead_001',
+    email: 'lead@campus.com',
+    name: 'Club Lead',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+    role: 'club_lead',
+    clubId: '1',
+  },
+  'test@example.com': {
+    id: 'student_001',
+    email: 'test@example.com',
+    name: 'John Doe',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+    role: 'student',
+  },
+};
 
 // Mock API delay function
 export const mockDelay = (ms: number = 1000) => 

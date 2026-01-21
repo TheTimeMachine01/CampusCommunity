@@ -1,8 +1,12 @@
+export type UserRole = 'admin' | 'club_lead' | 'student' | 'guest';
+
 export interface User {
   id: string;
   email: string;
   name?: string;
   avatar?: string;
+  role: UserRole;
+  clubId?: string;
 }
 
 export interface NewsItem {
