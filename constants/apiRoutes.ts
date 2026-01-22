@@ -10,4 +10,5 @@ export const API_ROUTES = {
   CLUBS: '/clubs',
   CLUB_UPDATES: (clubId: string) => `/clubs/${clubId}/updates`,
   USER_PROFILE: '/user/profile',
+  NOTIFICATIONS: '/notifications',
 } as const;

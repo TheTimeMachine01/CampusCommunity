@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
-import { YStack, Text, useTheme } from 'tamagui';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ClubCard } from '../../../components/ui/ClubCard';
 import { RoleGuard } from '../../../components/RoleGuard';
@@ -12,18 +12,27 @@ import { Club, Update } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../hooks/useAuth';
 
+const CLUB_CATEGORIES = ['All', 'Technical', 'Sports', 'Cultural', 'Academic', 'Social'] as const;
+type ClubCategory = typeof CLUB_CATEGORIES[number];
+
 export default function ClubsScreen() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [selectedClubId, setSelectedClubId] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<ClubCategory>('All');
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
   const { user } = useAuth();
   const { isOnline } = useConnectivity();
 
   const isDark = colorScheme === 'dark';
+
+  // Filter clubs based on selected category
+  const filteredClubs = selectedCategory === 'All'
+    ? clubs
+    : clubs.filter(club => club.category.toLowerCase() === selectedCategory.toLowerCase());
 
   const loadClubs = async () => {
     try {
@@ -108,6 +117,41 @@ export default function ClubsScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Category Filter Chips */}
+        <ScrollView
+          horizontal
+          scrollEventThrottle={16}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, gap: 8 }}
+          style={{ backgroundColor: isDark ? '#1f2937' : '#f9fafb' }}
+        >
+          {CLUB_CATEGORIES.map((category) => (
+            <Pressable
+              key={category}
+              onPress={() => setSelectedCategory(category)}
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor:
+                  selectedCategory === category
+                    ? '#10B981'
+                    : isDark
+                    ? '#374151'
+                    : '#e5e7eb',
+              }}
+            >
+              <Text
+                fontSize={12}
+                fontWeight="600"
+                color={selectedCategory === category ? 'white' : isDark ? '#d1d5db' : '#4b5563'}
+              >
+                {category}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
         <YStack padding={20} gap={15}>
           <YStack gap={10}>
             <Text fontSize={20} fontWeight="bold" color={isDark ? '#ffffff' : '#1f2937'} marginBottom={10}>
@@ -140,17 +184,17 @@ export default function ClubsScreen() {
             <Text fontSize={16} color={isDark ? '#d1d5db' : '#6b7280'} textAlign="center" padding={20}>
               Loading clubs...
             </Text>
-          ) : clubs.length === 0 ? (
+          ) : filteredClubs.length === 0 ? (
             <YStack alignItems="center" padding={40} gap={10}>
               <Text fontSize={18} fontWeight="600" color={isDark ? '#ffffff' : '#1f2937'}>
-                No clubs subscribed yet
+                {clubs.length === 0 ? 'No clubs subscribed yet' : 'No clubs in this category'}
               </Text>
               <Text fontSize={14} color={isDark ? '#d1d5db' : '#6b7280'} textAlign="center">
-                Join some clubs to see updates here
+                {clubs.length === 0 ? 'Join some clubs to see updates here' : 'Try selecting a different category'}
               </Text>
             </YStack>
           ) : (
-            clubs.map((club) => (
+            filteredClubs.map((club) => (
               <ClubCard
                 key={club.id}
                 club={club}

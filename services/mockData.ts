@@ -1,4 +1,4 @@
-import { NewsItem, Club, Update, User } from '../constants/types';
+import { NewsItem, Club, Update, User, Notification } from '../constants/types';
 
 export const mockNews: NewsItem[] = [
   {
@@ -164,3 +164,172 @@ export const mockUsers: { [key: string]: User } = {
 // Mock API delay function
 export const mockDelay = (ms: number = 1000) => 
   new Promise(resolve => setTimeout(resolve, ms));
+
+// Plan 4: Mock Notifications - Comprehensive Test Data
+export const mockNotifications: Notification[] = [
+  // ========== UNREAD NOTIFICATIONS (Recent) ==========
+  {
+    id: 'notif_1',
+    type: 'system',
+    title: '✅ Sync Complete',
+    message: 'Your news post "Campus Tech Fest" has been synced successfully!',
+    timestamp: new Date(Date.now() - 2 * 60000), // 2 minutes ago
+    isRead: false,
+    relatedId: '1',
+  },
+  {
+    id: 'notif_2',
+    type: 'news',
+    title: '📰 New Announcement',
+    message: 'Tech Society posted: Annual Tech Fest 2024 Registration Open - Don\'t miss out!',
+    timestamp: new Date(Date.now() - 5 * 60000), // 5 minutes ago
+    isRead: false,
+    relatedId: '1',
+  },
+  {
+    id: 'notif_3',
+    type: 'club',
+    title: '🎭 Computer Science Society Update',
+    message: 'Weekly Coding Challenge: Implement a binary search tree with O(log n) operations',
+    timestamp: new Date(Date.now() - 10 * 60000), // 10 minutes ago
+    isRead: false,
+    clubId: '1',
+  },
+  {
+    id: 'notif_4',
+    type: 'system',
+    title: '✅ Club Update Synced',
+    message: 'Your club update "Guest Speaker Event" has been posted successfully!',
+    timestamp: new Date(Date.now() - 15 * 60000), // 15 minutes ago
+    isRead: false,
+    relatedId: 'club_1',
+  },
+  {
+    id: 'notif_5',
+    type: 'club',
+    title: '🎭 Photography Club Update',
+    message: 'Photo Walk This Weekend: Join us for a photo walk around campus gardens. Bring your cameras!',
+    timestamp: new Date(Date.now() - 20 * 60000), // 20 minutes ago
+    isRead: false,
+    clubId: '2',
+  },
+
+  // ========== READ NOTIFICATIONS (Last Hour) ==========
+  {
+    id: 'notif_6',
+    type: 'news',
+    title: '📰 New Announcement',
+    message: 'Library Services: Campus Library Extended Hours - Open 24/7 during exam periods',
+    timestamp: new Date(Date.now() - 45 * 60000), // 45 minutes ago
+    isRead: true,
+    relatedId: '2',
+  },
+  {
+    id: 'notif_7',
+    type: 'admin',
+    title: '👑 System Announcement',
+    message: 'Scheduled maintenance on library systems will occur this weekend from 2-6 PM',
+    timestamp: new Date(Date.now() - 1 * 3600000), // 1 hour ago
+    isRead: true,
+  },
+  {
+    id: 'notif_8',
+    type: 'club',
+    title: '🎭 Debate Society Update',
+    message: 'Registration open for Inter-University Debate Competition - Deadline: Feb 15',
+    timestamp: new Date(Date.now() - 1.5 * 3600000), // 1.5 hours ago
+    isRead: true,
+    clubId: '3',
+  },
+
+  // ========== OLDER NOTIFICATIONS ==========
+  {
+    id: 'notif_9',
+    type: 'news',
+    title: '📰 New Achievement',
+    message: 'Congratulations to Sarah Johnson for winning the National Coding Championship!',
+    timestamp: new Date(Date.now() - 3 * 3600000), // 3 hours ago
+    isRead: true,
+    relatedId: '3',
+  },
+  {
+    id: 'notif_10',
+    type: 'system',
+    title: '✅ Subscription Confirmed',
+    message: 'You have successfully subscribed to Basketball Team announcements',
+    timestamp: new Date(Date.now() - 5 * 3600000), // 5 hours ago
+    isRead: true,
+  },
+  {
+    id: 'notif_11',
+    type: 'club',
+    title: '🎭 Basketball Team Achievement',
+    message: 'Championship Victory! Our team won the regional basketball championship!',
+    timestamp: new Date(Date.now() - 6 * 3600000), // 6 hours ago
+    isRead: true,
+    clubId: '4',
+  },
+  {
+    id: 'notif_12',
+    type: 'admin',
+    title: '👑 Important Notice',
+    message: 'Please update your profile information in Settings for accurate records',
+    timestamp: new Date(Date.now() - 8 * 3600000), // 8 hours ago
+    isRead: true,
+  },
+  {
+    id: 'notif_13',
+    type: 'news',
+    title: '📰 New Event',
+    message: 'Sports Complex Grand Opening Ceremony this Saturday at 10 AM - State-of-the-art facilities!',
+    timestamp: new Date(Date.now() - 12 * 3600000), // 12 hours ago
+    isRead: true,
+    relatedId: '4',
+  },
+  {
+    id: 'notif_14',
+    type: 'system',
+    title: '✅ Profile Updated',
+    message: 'Your profile changes have been saved successfully',
+    timestamp: new Date(Date.now() - 24 * 3600000), // 1 day ago
+    isRead: true,
+  },
+  {
+    id: 'notif_15',
+    type: 'news',
+    title: '📰 Scholarship Opportunity',
+    message: 'Don\'t miss out on various scholarship opportunities. Application deadline approaching fast!',
+    timestamp: new Date(Date.now() - 2 * 24 * 3600000), // 2 days ago
+    isRead: true,
+    relatedId: '5',
+  },
+  {
+    id: 'notif_16',
+    type: 'club',
+    title: '🎭 Art Club Monthly Exhibition',
+    message: 'Join us for our monthly art exhibition - Showcase your creative works!',
+    timestamp: new Date(Date.now() - 3 * 24 * 3600000), // 3 days ago
+    isRead: true,
+    clubId: '5',
+  },
+];
+
+/**
+ * Create mock notification for demonstration
+ * Usage: Call this function to add a new mock notification
+ */
+export const createMockNotification = (
+  type: 'system' | 'news' | 'club' | 'admin' = 'system',
+  title: string = '📢 New Notification',
+  message: string = 'This is a test notification'
+): Notification => {
+  return {
+    id: `notif_${Date.now()}_${Math.random()}`,
+    type,
+    title,
+    message,
+    timestamp: new Date(),
+    isRead: false,
+  };
+};
+

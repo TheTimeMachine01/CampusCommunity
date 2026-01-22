@@ -49,6 +49,20 @@ export interface LoginCredentials {
   password: string;
 }
 
+// Plan 4: Notification Center & Discovery System
+export type NotificationType = 'system' | 'club' | 'admin' | 'news';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: Date;
+  isRead: boolean;
+  relatedId?: string; // Reference to news/club/update
+  clubId?: string; // For club-specific notifications
+}
+
 export interface SignupCredentials {
   email: string;
   password: string;

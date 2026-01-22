@@ -1,12 +1,13 @@
 import axios from 'axios';
 import { API_ROUTES } from '../constants/apiRoutes';
-import { mockNews as initialMockNews, mockClubs as initialMockClubs, mockUsers, mockDelay } from './mockData';
-import { LoginCredentials, SignupCredentials, AuthTokens, NewsItem, Club, Update } from '../constants/types';
-import { newsCache, clubsCache, syncMetadata } from './storage';
+import { mockNews as initialMockNews, mockClubs as initialMockClubs, mockUsers, mockDelay, mockNotifications as initialMockNotifications } from './mockData';
+import { LoginCredentials, SignupCredentials, AuthTokens, NewsItem, Club, Update, Notification } from '../constants/types';
+import { newsCache, clubsCache, syncMetadata, notificationsCache } from './storage';
 
 // Mutable state for mock data to allow simulated persistence
 let mockNewsState: NewsItem[] = JSON.parse(JSON.stringify(initialMockNews));
 let mockClubsState: Club[] = JSON.parse(JSON.stringify(initialMockClubs));
+let mockNotificationsState: Notification[] = JSON.parse(JSON.stringify(initialMockNotifications));
 
 // Create axios instance
 const api = axios.create({
@@ -71,6 +72,16 @@ const mockApiResponses = {
     const data = mockClubsState.filter(club => club.isSubscribed);
     // Cache the response
     await clubsCache.save(data);
+    await syncMetadata.setLastSync();
+    return { data };
+  },
+
+  // Plan 4: Notifications endpoint
+  [API_ROUTES.NOTIFICATIONS]: async (): Promise<{ data: Notification[] }> => {
+    await mockDelay(500);
+    const data = mockNotificationsState;
+    // Cache the response
+    await notificationsCache.save(data);
     await syncMetadata.setLastSync();
     return { data };
   },
@@ -186,6 +197,12 @@ export const clubsApi = {
     // Add to the beginning of the updates array
     club.updates.unshift(newUpdate);
     return { data: newUpdate };
+  },
+};
+
+export const notificationsApi = {
+  getNotifications: async () => {
+    return mockApiResponses[API_ROUTES.NOTIFICATIONS]();
   },
 };
 

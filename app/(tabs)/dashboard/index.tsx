@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
-import { YStack, Text, useTheme } from 'tamagui';
+import { View, ScrollView, RefreshControl, Pressable, Alert, TextInput } from 'react-native';
+import { YStack, XStack, Text, useTheme } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NewsCard } from '../../../components/ui/NewsCard';
 import { RoleGuard } from '../../../components/RoleGuard';
 import { NewsModal } from '../../../components/modals/NewsModal';
+import { NotificationCenter } from '../../../components/modals/NotificationCenter';
+import { NotificationBell } from '../../../components/ui/NotificationBell';
 import { newsApi } from '../../../services/api';
 import { useConnectivity } from '../../../context/ConnectivityContext';
 import { newsCache } from '../../../services/storage';
 import { NewsItem } from '../../../constants/types';
 import { useResolvedColorScheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../hooks/useAuth';
+import { useSearch } from '../../../hooks/useSearch';
 
 export default function DashboardScreen() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [newsModalVisible, setNewsModalVisible] = useState(false);
+  const [notificationCenterVisible, setNotificationCenterVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
   const colorScheme = useResolvedColorScheme();
   const { user } = useAuth();
   const { isOnline } = useConnectivity();
 
   const isDark = colorScheme === 'dark';
+
+  // Filter news based on search query
+  const filteredNews = useSearch(news, searchQuery);
 
   const loadNews = async () => {
     try {
@@ -66,21 +74,54 @@ export default function DashboardScreen() {
       <LinearGradient
         colors={['#667eea', '#764ba2', '#f093fb']}
         style={{
-          height: 140,
           paddingTop: 50,
           paddingHorizontal: 20,
           paddingBottom: 20,
-          justifyContent: 'center',
+          justifyContent: 'space-between',
           borderBottomLeftRadius: 20,
           borderBottomRightRadius: 20,
         }}
       >
-        <Text fontSize={28} fontWeight="bold" color="white" marginBottom={5}>
-          Welcome to Campus
-        </Text>
-        <Text fontSize={16} color="rgba(255,255,255,0.9)">
-          Stay updated with latest news
-        </Text>
+        {/* Header with Bell */}
+        <XStack justifyContent="space-between" alignItems="center" marginBottom={15}>
+          <YStack flex={1}>
+            <Text fontSize={28} fontWeight="bold" color="white" marginBottom={2}>
+              Welcome to Campus
+            </Text>
+            <Text fontSize={14} color="rgba(255,255,255,0.85)">
+              Stay updated with latest news
+            </Text>
+          </YStack>
+          <NotificationBell 
+            onPress={() => setNotificationCenterVisible(true)}
+            color="white"
+            size={24}
+          />
+        </XStack>
+
+        {/* Search Bar */}
+        <View
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: 25,
+            paddingHorizontal: 15,
+            paddingVertical: 8,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.3)',
+          }}
+        >
+          <TextInput
+            placeholder="Search news..."
+            placeholderTextColor="rgba(255, 255, 255, 0.6)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={{
+              color: 'white',
+              fontSize: 14,
+              fontWeight: '500',
+            }}
+          />
+        </View>
       </LinearGradient>
 
       <ScrollView
@@ -117,17 +158,17 @@ export default function DashboardScreen() {
             <Text fontSize={16} color={isDark ? '#d1d5db' : '#6b7280'} textAlign="center" padding={20}>
               Loading news...
             </Text>
-          ) : news.length === 0 ? (
+          ) : filteredNews.length === 0 ? (
             <YStack alignItems="center" padding={40} gap={10}>
               <Text fontSize={18} fontWeight="600" color={isDark ? '#ffffff' : '#1f2937'}>
-                No news yet
+                {searchQuery ? 'No results found' : 'No news yet'}
               </Text>
               <Text fontSize={14} color={isDark ? '#d1d5db' : '#6b7280'} textAlign="center">
-                Check back soon for updates
+                {searchQuery ? 'Try a different search' : 'Check back soon for updates'}
               </Text>
             </YStack>
           ) : (
-            news.map((item) => (
+            filteredNews.map((item) => (
               <NewsCard
                 key={item.id}
                 newsItem={item}
@@ -146,6 +187,11 @@ export default function DashboardScreen() {
         onClose={() => setNewsModalVisible(false)}
         onSuccess={handleNewsSuccess}
         authorName={user?.name || 'Campus Admin'}
+      />
+
+      <NotificationCenter
+        visible={notificationCenterVisible}
+        onClose={() => setNotificationCenterVisible(false)}
       />
     </YStack>
   );

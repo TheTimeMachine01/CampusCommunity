@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NewsItem, Club } from '../constants/types';
+import { notificationService } from './notificationService';
 
 export type PendingActionType = 'CREATE_NEWS' | 'UPDATE_CLUB' | 'SUBSCRIBE_CLUB' | 'UNSUBSCRIBE_CLUB';
 
@@ -63,6 +64,7 @@ class SyncQueueManager {
   /**
    * Process all pending actions
    * Uses Last-Write-Wins strategy for conflicts
+   * Creates notifications on successful sync
    */
   async processPendingActions(
     apiCall: (action: PendingAction) => Promise<boolean>
@@ -78,6 +80,17 @@ class SyncQueueManager {
         if (success) {
           await this.removeAction(action.id);
           succeeded++;
+
+          // Create sync success notification
+          try {
+            const actionLabel = this.getActionLabel(action.type);
+            await notificationService.createSyncSuccessNotification(
+              actionLabel,
+              action.payload?.title || action.payload?.name || 'Item'
+            );
+          } catch (notifError) {
+            console.warn('[SyncQueue] Failed to create notification:', notifError);
+          }
         } else {
           action.retryCount++;
           if (action.retryCount > 3) {
@@ -102,6 +115,24 @@ class SyncQueueManager {
       `[SyncQueue] Processing complete: ${succeeded} succeeded, ${failed} failed`
     );
     return { succeeded, failed };
+  }
+
+  /**
+   * Get human-readable action label
+   */
+  private getActionLabel(type: PendingActionType): string {
+    switch (type) {
+      case 'CREATE_NEWS':
+        return 'News post';
+      case 'UPDATE_CLUB':
+        return 'Club update';
+      case 'SUBSCRIBE_CLUB':
+        return 'Club subscription';
+      case 'UNSUBSCRIBE_CLUB':
+        return 'Club unsubscription';
+      default:
+        return 'Action';
+    }
   }
 
   /**

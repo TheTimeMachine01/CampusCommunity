@@ -8,6 +8,7 @@ export const CACHE_KEYS = {
   PENDING_ACTIONS: '@campus_pending_actions',
   LAST_SYNC: '@campus_last_sync',
   USER_DATA: '@campus_user_data',
+  NOTIFICATIONS: '@campus_notifications',
 };
 
 // Generic storage functions
@@ -140,5 +141,44 @@ export const syncMetadata = {
   getLastSync: async (): Promise<Date | null> => {
     const timestamp = await storage.getItem<string>(CACHE_KEYS.LAST_SYNC);
     return timestamp ? new Date(timestamp) : null;
+  },
+};
+
+// Plan 4: Notification cache
+export const notificationsCache = {
+  save: async (notifications: any[]): Promise<void> => {
+    await storage.setItem(CACHE_KEYS.NOTIFICATIONS, notifications);
+  },
+
+  get: async (): Promise<any[] | null> => {
+    return storage.getItem(CACHE_KEYS.NOTIFICATIONS);
+  },
+
+  addNotification: async (notification: any): Promise<void> => {
+    const existing = await notificationsCache.get();
+    const updated = existing ? [notification, ...existing] : [notification];
+    await notificationsCache.save(updated);
+  },
+
+  markAsRead: async (notificationId: string): Promise<void> => {
+    const notifications = await notificationsCache.get();
+    if (notifications) {
+      const updated = notifications.map((n: any) =>
+        n.id === notificationId ? { ...n, isRead: true } : n
+      );
+      await notificationsCache.save(updated);
+    }
+  },
+
+  markAllAsRead: async (): Promise<void> => {
+    const notifications = await notificationsCache.get();
+    if (notifications) {
+      const updated = notifications.map((n: any) => ({ ...n, isRead: true }));
+      await notificationsCache.save(updated);
+    }
+  },
+
+  clear: async (): Promise<void> => {
+    await storage.removeItem(CACHE_KEYS.NOTIFICATIONS);
   },
 };
